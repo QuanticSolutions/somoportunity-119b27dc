@@ -58,7 +58,7 @@ export default function ProviderSettings() {
   const fetchSubscription = async () => {
     const [{ data: subData }, { data: planData }] = await Promise.all([
       supabase.from("provider_subscriptions").select("*, subscription_plans(*)").eq("provider_id", user!.id).single(),
-      supabase.from("subscription_plans").select("*").order("tier"),
+      supabase.from("subscription_plans").select("*"),
     ]);
     setSub(subData);
     setPlans(planData || []);
@@ -226,9 +226,9 @@ export default function ProviderSettings() {
                       <div className="flex items-center gap-3">
                         <CreditCard size={20} className="text-primary" />
                         <div>
-                          <p className="font-semibold text-foreground">{(sub.subscription_plans as any)?.display_name}</p>
+                          <p className="font-semibold text-foreground">{(sub.subscription_plans as any)?.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            ${(sub.subscription_plans as any)?.price_monthly}/month
+                            ${(sub.subscription_plans as any)?.price}/month
                           </p>
                         </div>
                       </div>
@@ -267,8 +267,8 @@ export default function ProviderSettings() {
                             </div>
                           )}
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-base">{plan.display_name}</CardTitle>
-                            <p className="text-xl font-bold text-foreground">${plan.price_monthly}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
+                            <CardTitle className="text-base">{plan.name}</CardTitle>
+                            <p className="text-xl font-bold text-foreground">${plan.price}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
                           </CardHeader>
                           <CardContent className="flex-1 flex flex-col">
                             <ul className="flex-1 space-y-1.5 mb-4">

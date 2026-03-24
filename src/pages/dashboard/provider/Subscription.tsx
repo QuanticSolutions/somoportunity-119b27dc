@@ -34,7 +34,7 @@ export default function Subscription() {
   const fetchData = async () => {
     const [{ data: subData }, { data: planData }] = await Promise.all([
       supabase.from("provider_subscriptions").select("*, subscription_plans(*)").eq("provider_id", user!.id).single(),
-      supabase.from("subscription_plans").select("*").order("tier"),
+      supabase.from("subscription_plans").select("*"),
     ]);
     setSub(subData);
     setPlans(planData || []);
@@ -51,16 +51,14 @@ export default function Subscription() {
       if (sub) {
         const { error } = await supabase.from("provider_subscriptions").update({
           plan_id: planId,
-          status: "under_review",
-          payment_status: "awaiting_payment",
+          status: "pending",
         }).eq("id", sub.id);
         if (error) throw error;
       } else {
         const { data: newSub, error } = await supabase.from("provider_subscriptions").insert({
           provider_id: user.id,
           plan_id: planId,
-          status: "pending_payment",
-          payment_status: "awaiting_payment",
+          status: "pending",
         }).select().single();
         if (error) throw error;
         subscriptionId = newSub?.id;
@@ -146,9 +144,9 @@ export default function Subscription() {
                   </div>
                 )}
                 <CardHeader>
-                  <CardTitle className="text-lg">{plan.display_name}</CardTitle>
+                  <CardTitle className="text-lg">{plan.name}</CardTitle>
                   <CardDescription>
-                    <span className="text-2xl font-bold text-foreground">${plan.price_monthly}</span>
+                    <span className="text-2xl font-bold text-foreground">${plan.price}</span>
                     <span className="text-muted-foreground">/month</span>
                   </CardDescription>
                 </CardHeader>

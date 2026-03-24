@@ -22,7 +22,7 @@ export default function SubscriptionSelect() {
       if (!user) return;
       const { data: existing } = await supabase
         .from("provider_subscriptions")
-        .select("id, status, payment_status")
+        .select("id, status")
         .eq("provider_id", user.id)
         .single();
 
