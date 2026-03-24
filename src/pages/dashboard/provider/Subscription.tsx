@@ -42,24 +42,54 @@ export default function Subscription() {
   };
 
   const selectPlan = async (planId: string) => {
+    if (!user) return;
     setChangingPlan(planId);
     try {
+      let subscriptionId = sub?.id;
+      const selectedPlan = plans.find(p => p.id === planId);
+
       if (sub) {
-        // Changing plan — old plan becomes inactive, new one needs approval
-        await supabase.from("provider_subscriptions").update({
+        const { error } = await supabase.from("provider_subscriptions").update({
           plan_id: planId,
           status: "under_review",
           payment_status: "awaiting_payment",
         }).eq("id", sub.id);
+        if (error) throw error;
       } else {
-        await supabase.from("provider_subscriptions").insert({
-          provider_id: user!.id,
+        const { data: newSub, error } = await supabase.from("provider_subscriptions").insert({
+          provider_id: user.id,
           plan_id: planId,
           status: "pending_payment",
           payment_status: "awaiting_payment",
+        }).select().single();
+        if (error) throw error;
+        subscriptionId = newSub?.id;
+      }
+
+      // Create admin notification
+      await supabase.from("admin_notifications").insert({
+        provider_id: user.id,
+        type: "subscription_request",
+        message: sub
+          ? `Provider requested plan change to ${selectedPlan?.display_name || "a new plan"}.`
+          : "New provider subscription request received.",
+      });
+
+      // Create audit log
+      if (subscriptionId) {
+        await supabase.from("subscription_audit_logs").insert({
+          subscription_id: subscriptionId,
+          action: sub ? "provider_requested_plan_change" : "provider_requested_plan",
+          notes: sub
+            ? `Provider requested to change from ${(sub.subscription_plans as any)?.display_name} to ${selectedPlan?.display_name}.`
+            : `Provider selected ${selectedPlan?.display_name}.`,
         });
       }
-      toast({ title: "Plan selected", description: "Your subscription change is under administrative review." });
+
+      toast({
+        title: sub ? "Plan change requested" : "Plan selected",
+        description: "Your request has been submitted for admin approval. You'll be notified once reviewed.",
+      });
       await fetchData();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
