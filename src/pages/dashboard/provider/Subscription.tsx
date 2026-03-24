@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { CreditCard, Check, Clock, ArrowUpRight } from "lucide-react";
+import { CreditCard, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,11 +9,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 
+const statusConfig: Record<string, { label: string; className: string }> = {
+  active: { label: "Active", className: "bg-emerald-100 text-emerald-700" },
+  pending_approval: { label: "Pending Approval", className: "bg-amber-100 text-amber-700" },
+  under_review: { label: "Under Review", className: "bg-amber-100 text-amber-700" },
+  pending_payment: { label: "Pending Payment", className: "bg-amber-100 text-amber-700" },
+  rejected: { label: "Rejected", className: "bg-destructive/10 text-destructive" },
+  inactive: { label: "Inactive", className: "bg-destructive/10 text-destructive" },
+  expired: { label: "Expired", className: "bg-destructive/10 text-destructive" },
+};
+
 export default function Subscription() {
   const { user } = useAuth();
   const [sub, setSub] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [changingPlan, setChangingPlan] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -31,11 +42,13 @@ export default function Subscription() {
   };
 
   const selectPlan = async (planId: string) => {
+    setChangingPlan(planId);
     try {
       if (sub) {
+        // Changing plan — old plan becomes inactive, new one needs approval
         await supabase.from("provider_subscriptions").update({
           plan_id: planId,
-          status: "pending_payment",
+          status: "under_review",
           payment_status: "awaiting_payment",
         }).eq("id", sub.id);
       } else {
@@ -46,20 +59,18 @@ export default function Subscription() {
           payment_status: "awaiting_payment",
         });
       }
-      toast({ title: "Plan selected", description: "Your subscription is under administrative review." });
-      fetchData();
+      toast({ title: "Plan selected", description: "Your subscription change is under administrative review." });
+      await fetchData();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setChangingPlan(null);
     }
   };
 
-  const statusBadge = (status: string) => {
-    const map: Record<string, string> = {
-      pending_approval: "bg-amber-100 text-amber-700",
-      approved: "bg-emerald-100 text-emerald-700",
-      rejected: "bg-destructive/10 text-destructive",
-    };
-    return map[status] || "bg-muted text-muted-foreground";
+  const getStatusBadge = (status: string) => {
+    const config = statusConfig[status] || { label: status.replace(/_/g, " "), className: "bg-destructive/10 text-destructive" };
+    return <Badge className={config.className}>{config.label}</Badge>;
   };
 
   if (loading) {
@@ -83,7 +94,7 @@ export default function Subscription() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Badge className={statusBadge(sub.status)}>{sub.status.replace("_", " ")}</Badge>
+              {getStatusBadge(sub.status)}
               {sub.renewal_date && (
                 <p className="text-xs text-muted-foreground">Renews {new Date(sub.renewal_date).toLocaleDateString()}</p>
               )}
@@ -123,10 +134,10 @@ export default function Subscription() {
                   <Button
                     className={isCurrentPlan ? "" : "btn-gradient w-full rounded-lg font-semibold"}
                     variant={isCurrentPlan ? "outline" : "default"}
-                    disabled={isCurrentPlan}
+                    disabled={isCurrentPlan || changingPlan === plan.id}
                     onClick={() => selectPlan(plan.id)}
                   >
-                    {isCurrentPlan ? "Selected" : "Select Plan"}
+                    {changingPlan === plan.id ? "Processing…" : isCurrentPlan ? "Current Plan" : sub ? "Change Plan" : "Select Plan"}
                   </Button>
                 </CardContent>
               </Card>

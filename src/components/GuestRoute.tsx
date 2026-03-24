@@ -23,7 +23,7 @@ export default function GuestRoute({ children }: { children: React.ReactNode }) 
       return <Navigate to="/onboarding" replace />;
     }
     // Redirect based on role
-    if (profile.role === "provider") return <Navigate to="/provider/subscribe" replace />;
+    if (profile.role === "provider") return <Navigate to="/dashboard/provider" replace />;
     return <Navigate to="/dashboard/seeker" replace />;
   }
 

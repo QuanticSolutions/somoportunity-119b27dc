@@ -5,13 +5,13 @@ import { Upload, Globe, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateProfile, uploadAvatar, getProfile, type AppRole } from "@/services/profile";
 import { toast } from "@/hooks/use-toast";
+import RichTextEditor from "@/components/RichTextEditor";
 
 const countries = [
   "Somalia", "Kenya", "Ethiopia", "Djibouti", "Uganda", "Tanzania",
@@ -32,10 +32,11 @@ export default function Onboarding() {
   // Handle OAuth redirect — set role from localStorage
   useEffect(() => {
     const savedRole = localStorage.getItem("signup_role") as AppRole | null;
-    if (savedRole && user && profile && (!profile.role || profile.role === "seeker")) {
+    if (savedRole && user && profile && profile.role === "seeker" && savedRole !== "seeker") {
       console.log("[Onboarding] Setting saved role from localStorage:", savedRole);
       updateProfile(user.id, { role: savedRole }).then(() => {
         refreshProfile();
+        localStorage.removeItem("signup_role");
       });
     }
   }, [user, profile]);
@@ -60,6 +61,13 @@ export default function Onboarding() {
     setAvatarPreview(URL.createObjectURL(file));
   };
 
+  // Strip HTML to get plain text length for validation
+  const getPlainTextLength = (html: string) => {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return (tmp.textContent || tmp.innerText || "").trim().length;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -67,7 +75,8 @@ export default function Onboarding() {
       toast({ title: "Country required", description: "Please select a country", variant: "destructive" });
       return;
     }
-    if (!bio.trim() || bio.trim().length < 10) {
+    const plainLength = getPlainTextLength(bio);
+    if (plainLength < 10) {
       toast({ title: "Bio required", description: "Write at least 10 characters", variant: "destructive" });
       return;
     }
@@ -79,7 +88,8 @@ export default function Onboarding() {
         avatar_url = await uploadAvatar(user.id, avatarFile);
       }
 
-      await updateProfile(user.id, { country, bio: bio.trim(), avatar_url });
+      // Preserve the current role — never overwrite it here
+      await updateProfile(user.id, { country, bio, avatar_url });
       console.log("[Onboarding] Profile updated with country/bio");
 
       // Re-fetch profile from DB to get the confirmed role
@@ -94,8 +104,13 @@ export default function Onboarding() {
       const confirmedRole = freshProfile?.role || "seeker";
       console.log("[Onboarding] Redirecting based on role:", confirmedRole);
 
+      // Clean up localStorage
+      localStorage.removeItem("signup_role");
+
       if (confirmedRole === "provider") {
         navigate("/provider/subscribe", { replace: true });
+      } else if (["admin", "editor", "viewer"].includes(confirmedRole)) {
+        navigate("/admin", { replace: true });
       } else {
         navigate("/dashboard/seeker", { replace: true });
       }
@@ -118,7 +133,7 @@ export default function Onboarding() {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative z-10 mx-auto w-full max-w-md px-4 py-12"
+        className="relative z-10 mx-auto w-full max-w-lg px-4 py-12"
       >
         {/* Step indicator */}
         <div className="mb-6 flex items-center justify-center gap-2">
@@ -163,19 +178,17 @@ export default function Onboarding() {
                 </Select>
               </div>
 
-              {/* Bio */}
+              {/* Bio — Rich Text Editor */}
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1.5">
                   <FileText size={14} className="text-muted-foreground" /> Short bio
                 </Label>
-                <Textarea
-                  placeholder="Tell us a little about yourself…"
+                <RichTextEditor
                   value={bio}
-                  onChange={(e) => setBio(e.target.value)}
+                  onChange={setBio}
+                  placeholder="Write a short professional bio..."
                   maxLength={500}
-                  rows={3}
                 />
-                <p className="text-xs text-muted-foreground text-right">{bio.length}/500</p>
               </div>
 
               <Button type="submit" disabled={loading} className="btn-gradient w-full rounded-lg font-semibold" size="lg">

@@ -36,7 +36,6 @@ const serviceItems = [
   { label: "Technical Writing", href: "/services/technical-writing", desc: "Professional documentation services" },
 ];
 
-// Exact order: Home → Jobs → Opportunities → Articles → Services → About → Contact → Submit Content
 const navLinks = [
   { label: "Home", href: "/" },
   { label: "Jobs", href: "/opportunities?category=job" },
@@ -52,6 +51,13 @@ const navLinksEnd = [
   { label: "Submit Content", href: "/signup" },
 ];
 
+function getDashboardPath(role?: string): string {
+  if (!role) return "/dashboard/seeker";
+  if (["admin", "editor", "viewer"].includes(role)) return "/admin";
+  if (role === "provider") return "/dashboard/provider";
+  return "/dashboard/seeker";
+}
+
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -64,7 +70,25 @@ export default function SiteHeader() {
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
 
-  const dashboardPath = profile?.role === "provider" ? "/dashboard/provider" : "/dashboard/seeker";
+  const dashboardPath = getDashboardPath(profile?.role);
+
+  const profilePath = profile?.role === "provider"
+    ? "/dashboard/provider/settings"
+    : ["admin", "editor", "viewer"].includes(profile?.role || "")
+    ? "/admin/settings"
+    : "/dashboard/seeker/profile";
+
+  const settingsPath = profile?.role === "provider"
+    ? "/dashboard/provider/settings"
+    : ["admin", "editor", "viewer"].includes(profile?.role || "")
+    ? "/admin/settings"
+    : "/dashboard/seeker/security";
+
+  const notificationsPath = ["admin", "editor", "viewer"].includes(profile?.role || "")
+    ? "/admin"
+    : profile?.role === "provider"
+    ? "/dashboard/provider"
+    : "/dashboard/seeker/notifications";
 
   const UserMenu = ({ align = "end" as const, compact = false }) => (
     <DropdownMenu>
@@ -82,13 +106,13 @@ export default function SiteHeader() {
           {!compact && <p className="text-xs text-muted-foreground truncate">{user?.email}</p>}
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate(`${dashboardPath}/profile`)} className="cursor-pointer gap-2.5 rounded-lg hover:bg-accent">
+        <DropdownMenuItem onClick={() => navigate(profilePath)} className="cursor-pointer gap-2.5 rounded-lg hover:bg-accent">
           <User size={14} /> My Profile
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate(dashboardPath)} className="cursor-pointer gap-2.5 rounded-lg hover:bg-accent">
           <LayoutDashboard size={14} /> Dashboard
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate(`${dashboardPath}/security`)} className="cursor-pointer gap-2.5 rounded-lg hover:bg-accent">
+        <DropdownMenuItem onClick={() => navigate(settingsPath)} className="cursor-pointer gap-2.5 rounded-lg hover:bg-accent">
           <Settings size={14} /> Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -105,17 +129,13 @@ export default function SiteHeader() {
       <button
         onClick={() => navigate(href)}
         className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group ${
-          isActive
-            ? "text-primary"
-            : "text-muted-foreground hover:text-primary"
+          isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
         }`}
       >
         {label}
-        <span
-          className={`absolute bottom-0.5 left-3 right-3 h-0.5 rounded-full bg-primary transition-transform duration-200 origin-left ${
-            isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
-          }`}
-        />
+        <span className={`absolute bottom-0.5 left-3 right-3 h-0.5 rounded-full bg-primary transition-transform duration-200 origin-left ${
+          isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+        }`} />
       </button>
     );
   };
@@ -126,19 +146,13 @@ export default function SiteHeader() {
         <div className="mx-auto max-w-7xl px-4 pt-3">
           <div className="glass-nav rounded-2xl border border-border/60 shadow-[var(--nav-shadow)] px-5 py-2.5">
             <div className="flex items-center justify-between">
-              {/* Logo */}
               <a href="/" className="flex items-center gap-1.5 text-xl font-extrabold tracking-tight shrink-0">
                 <span className="text-gradient">Somopportunity</span>
               </a>
 
-              {/* Desktop nav — exact order */}
               <nav className="hidden items-center gap-0.5 lg:flex">
-                {/* Home, Jobs */}
-                {navLinks.map((l) => (
-                  <NavButton key={l.label} {...l} />
-                ))}
+                {navLinks.map((l) => <NavButton key={l.label} {...l} />)}
 
-                {/* Opportunities dropdown */}
                 <NavigationMenu>
                   <NavigationMenuList>
                     <NavigationMenuItem>
@@ -148,11 +162,8 @@ export default function SiteHeader() {
                       <NavigationMenuContent>
                         <div className="grid w-72 gap-0.5 p-2">
                           {opportunityItems.map((item) => (
-                            <button
-                              key={item.label}
-                              onClick={() => navigate(`/opportunities?category=${item.category}`)}
-                              className="flex flex-col rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent"
-                            >
+                            <button key={item.label} onClick={() => navigate(`/opportunities?category=${item.category}`)}
+                              className="flex flex-col rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent">
                               <span className="text-sm font-medium text-foreground">{item.label}</span>
                               <span className="text-xs text-muted-foreground">{item.desc}</span>
                             </button>
@@ -163,12 +174,8 @@ export default function SiteHeader() {
                   </NavigationMenuList>
                 </NavigationMenu>
 
-                {/* Articles */}
-                {navLinksAfterDropdowns.map((l) => (
-                  <NavButton key={l.label} {...l} />
-                ))}
+                {navLinksAfterDropdowns.map((l) => <NavButton key={l.label} {...l} />)}
 
-                {/* Services dropdown */}
                 <NavigationMenu>
                   <NavigationMenuList>
                     <NavigationMenuItem>
@@ -178,11 +185,8 @@ export default function SiteHeader() {
                       <NavigationMenuContent>
                         <div className="grid w-64 gap-0.5 p-2">
                           {serviceItems.map((item) => (
-                            <button
-                              key={item.label}
-                              onClick={() => navigate(item.href)}
-                              className="flex flex-col rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent"
-                            >
+                            <button key={item.label} onClick={() => navigate(item.href)}
+                              className="flex flex-col rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent">
                               <span className="text-sm font-medium text-foreground">{item.label}</span>
                               <span className="text-xs text-muted-foreground">{item.desc}</span>
                             </button>
@@ -193,28 +197,18 @@ export default function SiteHeader() {
                   </NavigationMenuList>
                 </NavigationMenu>
 
-                {/* About, Contact, Submit Content */}
-                {navLinksEnd.map((l) => (
-                  <NavButton key={l.label} {...l} />
-                ))}
+                {navLinksEnd.map((l) => <NavButton key={l.label} {...l} />)}
               </nav>
 
-              {/* Right side — Search, Notification, Auth */}
               <div className="hidden items-center gap-1.5 lg:flex">
-                <button
-                  onClick={() => navigate("/opportunities")}
-                  className="rounded-lg p-2 text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
-                  aria-label="Search"
-                >
+                <button onClick={() => navigate("/opportunities")}
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors" aria-label="Search">
                   <Search size={18} />
                 </button>
 
                 {!loading && user && (
-                  <button
-                    onClick={() => navigate(`${dashboardPath}/notifications`)}
-                    className="rounded-lg p-2 text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
-                    aria-label="Notifications"
-                  >
+                  <button onClick={() => navigate(notificationsPath)}
+                    className="rounded-lg p-2 text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors" aria-label="Notifications">
                     <Bell size={18} />
                   </button>
                 )}
@@ -232,7 +226,6 @@ export default function SiteHeader() {
                 {!loading && user && <UserMenu />}
               </div>
 
-              {/* Mobile toggle */}
               <div className="flex items-center gap-3 lg:hidden">
                 {!loading && user && <UserMenu compact />}
                 <button onClick={() => setOpen(!open)} className="rounded-lg p-2 text-foreground hover:bg-accent/50 transition-colors" aria-label="Menu">
@@ -243,7 +236,6 @@ export default function SiteHeader() {
           </div>
         </div>
 
-        {/* Mobile nav */}
         {open && (
           <div className="mx-auto max-w-7xl px-4 pt-2 lg:hidden">
             <nav className="glass-nav flex flex-col gap-1 rounded-2xl border border-border/60 shadow-[var(--nav-shadow)] p-4 animate-fade-in">
@@ -254,7 +246,6 @@ export default function SiteHeader() {
                 </button>
               ))}
 
-              {/* Opportunities accordion */}
               <Collapsible open={mobileOppOpen} onOpenChange={setMobileOppOpen}>
                 <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-accent/50 transition-colors">
                   Opportunities <ChevronDown size={16} className={`transition-transform ${mobileOppOpen ? 'rotate-180' : ''}`} />
@@ -276,7 +267,6 @@ export default function SiteHeader() {
                 </button>
               ))}
 
-              {/* Services accordion */}
               <Collapsible open={mobileSvcOpen} onOpenChange={setMobileSvcOpen}>
                 <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-accent/50 transition-colors">
                   Services <ChevronDown size={16} className={`transition-transform ${mobileSvcOpen ? 'rotate-180' : ''}`} />

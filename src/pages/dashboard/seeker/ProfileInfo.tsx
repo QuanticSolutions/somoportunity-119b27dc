@@ -4,13 +4,13 @@ import { User, Upload, Globe, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateProfile, uploadAvatar } from "@/services/profile";
 import { toast } from "@/hooks/use-toast";
+import RichTextEditor from "@/components/RichTextEditor";
 
 const countries = [
   "Somalia", "Kenya", "Ethiopia", "Djibouti", "Uganda", "Tanzania",
@@ -106,8 +106,12 @@ export default function ProfileInfo() {
 
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5"><FileText size={14} className="text-muted-foreground" /> Bio</Label>
-              <Textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell us about yourself…" maxLength={500} rows={3} />
-              <p className="text-xs text-muted-foreground text-right">{bio.length}/500</p>
+              <RichTextEditor
+                value={bio}
+                onChange={setBio}
+                placeholder="Write a short professional bio..."
+                maxLength={500}
+              />
             </div>
 
             <Button type="submit" disabled={loading} className="btn-gradient w-full rounded-lg font-semibold">

@@ -56,5 +56,7 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
 
 export function isProfileComplete(profile: Profile | null): boolean {
   if (!profile) return false;
-  return !!(profile.full_name && profile.country && profile.bio);
+  // Bio may be HTML from rich text editor — check it has actual text content
+  const hasBio = !!profile.bio && profile.bio !== "<p></p>" && profile.bio.replace(/<[^>]*>/g, "").trim().length > 0;
+  return !!(profile.full_name && profile.country && hasBio);
 }
