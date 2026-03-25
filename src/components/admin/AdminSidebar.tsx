@@ -29,7 +29,7 @@ const overviewItems = [
 ];
 
 const managementItems = [
-  { title: "Opportunities", url: "/admin/opportunities", icon: Briefcase },
+  { title: "Content", url: "/admin/content", icon: FileText },
   { title: "Submissions", url: "/admin/submissions", icon: Inbox },
   { title: "Subscriptions", url: "/admin/subscriptions", icon: CreditCard },
 ];
@@ -38,7 +38,6 @@ const analyticsItems = [
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Providers", url: "/admin/providers", icon: Shield },
-  { title: "Articles", url: "/admin/articles", icon: FileText },
   { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
