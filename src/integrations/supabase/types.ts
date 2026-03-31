@@ -79,48 +79,65 @@ export type Database = {
           },
         ]
       }
+      application_documents: {
+        Row: {
+          application_id: string
+          file_type: string
+          file_url: string
+          id: string
+          uploaded_at: string
+        }
+        Insert: {
+          application_id: string
+          file_type: string
+          file_url: string
+          id?: string
+          uploaded_at?: string
+        }
+        Update: {
+          application_id?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_documents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
           cover_letter: string | null
           created_at: string
-          documents: Json | null
-          email: string | null
           id: string
-          name: string | null
           opportunity_id: string
-          phone: string | null
-          resume_url: string | null
-          status: string
+          seeker_id: string
+          status: Database["public"]["Enums"]["application_status"]
           updated_at: string
-          user_id: string
         }
         Insert: {
           cover_letter?: string | null
           created_at?: string
-          documents?: Json | null
-          email?: string | null
           id?: string
-          name?: string | null
           opportunity_id: string
-          phone?: string | null
-          resume_url?: string | null
-          status?: string
+          seeker_id: string
+          status?: Database["public"]["Enums"]["application_status"]
           updated_at?: string
-          user_id: string
         }
         Update: {
           cover_letter?: string | null
           created_at?: string
-          documents?: Json | null
-          email?: string | null
           id?: string
-          name?: string | null
           opportunity_id?: string
-          phone?: string | null
-          resume_url?: string | null
-          status?: string
+          seeker_id?: string
+          status?: Database["public"]["Enums"]["application_status"]
           updated_at?: string
-          user_id?: string
         }
         Relationships: [
           {
@@ -132,7 +149,7 @@ export type Database = {
           },
           {
             foreignKeyName: "applications_user_id_fkey"
-            columns: ["user_id"]
+            columns: ["seeker_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -712,6 +729,12 @@ export type Database = {
     }
     Enums: {
       app_role: "seeker" | "provider" | "admin" | "editor" | "viewer"
+      application_status:
+        | "submitted"
+        | "shortlisted"
+        | "interview"
+        | "hired"
+        | "denied"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -840,6 +863,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["seeker", "provider", "admin", "editor", "viewer"],
+      application_status: [
+        "submitted",
+        "shortlisted",
+        "interview",
+        "hired",
+        "denied",
+      ],
     },
   },
 } as const
