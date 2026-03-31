@@ -143,6 +143,7 @@ export default function Opportunities() {
                 <TableHead className="hidden lg:table-cell">Deadline</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden lg:table-cell">Views</TableHead>
+                <TableHead className="hidden lg:table-cell">Applicants</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
