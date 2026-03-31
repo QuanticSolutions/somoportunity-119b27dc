@@ -242,9 +242,14 @@ export default function OpportunityFormDialog({ open, onOpenChange, editOpp, can
             <Input value={form.external_link} onChange={e => set("external_link", e.target.value)} placeholder="https://..." />
           </Field>
 
-          <Button onClick={handleSave} disabled={saving} className="btn-gradient w-full rounded-lg font-semibold">
-            {saving ? "Saving…" : editOpp ? "Update" : "Submit for Review"}
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="flex-1 rounded-lg font-semibold">
+              {saving ? "Saving…" : "Save as Draft"}
+            </Button>
+            <Button onClick={() => handleSave(false)} disabled={saving} className="btn-gradient flex-1 rounded-lg font-semibold">
+              {saving ? "Saving…" : editOpp ? "Update" : "Submit for Review"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
