@@ -94,7 +94,7 @@ export default function OpportunityFormDialog({ open, onOpenChange, editOpp, can
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (asDraft = false) => {
     if (!form.title.trim()) {
       toast({ title: "Title is required", variant: "destructive" });
       return;
@@ -118,11 +118,14 @@ export default function OpportunityFormDialog({ open, onOpenChange, editOpp, can
       };
 
       if (editOpp) {
-        const { error } = await supabase.from("opportunities").update(payload).eq("id", editOpp.id);
+        const { error } = await supabase.from("opportunities").update({
+          ...payload,
+          status: asDraft ? "draft" : editOpp.status === "draft" ? "pending" : editOpp.status,
+        }).eq("id", editOpp.id);
         if (error) throw error;
-        toast({ title: "Opportunity updated" });
+        toast({ title: asDraft ? "Saved as draft" : "Opportunity updated" });
       } else {
-        if (!canPost) {
+        if (!asDraft && !canPost) {
           toast({ title: "Posting limit reached", description: "Upgrade your plan to post more.", variant: "destructive" });
           setSaving(false);
           return;
@@ -130,11 +133,11 @@ export default function OpportunityFormDialog({ open, onOpenChange, editOpp, can
         const { error } = await supabase.from("opportunities").insert({
           ...payload,
           provider_id: user!.id,
-          status: "pending",
+          status: asDraft ? "draft" : "pending",
           views_count: 0,
         });
         if (error) throw error;
-        toast({ title: "Opportunity submitted", description: "Your opportunity is awaiting approval." });
+        toast({ title: asDraft ? "Saved as draft" : "Submitted for review" });
       }
       onSaved();
     } catch (err: any) {
