@@ -181,10 +181,19 @@ export default function Applicants() {
                         </Button>
                       ))}
                     </div>
+                    {(a as any).resume_url && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => viewResume((a as any).resume_url)}
+                      >
+                        <FileText size={14} className="mr-1" /> Resume
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setEmailModal({ open: true, recipientId: a.user_id, name: (a.profiles as any)?.full_name || "Applicant" })}
+                      onClick={() => setEmailModal({ open: true, recipientId: a.user_id, name: (a as any).name || (a.profiles as any)?.full_name || "Applicant" })}
                     >
                       <Mail size={14} className="mr-1" /> Message
                     </Button>
