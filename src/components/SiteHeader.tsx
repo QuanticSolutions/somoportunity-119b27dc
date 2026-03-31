@@ -20,6 +20,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginModal from "@/components/LoginModal";
+import NotificationBell from "@/components/NotificationBell";
 
 const opportunityItems = [
   { label: "Jobs", category: "job", desc: "Career opportunities across industries" },
