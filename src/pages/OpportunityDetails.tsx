@@ -8,6 +8,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import ApplicationForm from "@/components/ApplicationForm";
+import SaveOpportunityButton from "@/components/SaveOpportunityButton";
+import DeadlineCountdown from "@/components/DeadlineCountdown";
 import { supabase } from "@/integrations/supabase/client";
 
 const categoryColors: Record<string, string> = {
