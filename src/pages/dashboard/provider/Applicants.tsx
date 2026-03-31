@@ -67,6 +67,21 @@ export default function Applicants() {
     setLoading(false);
   };
 
+  const viewResume = async (resumeUrl: string) => {
+    if (!resumeUrl) {
+      toast({ title: "No resume uploaded", variant: "destructive" });
+      return;
+    }
+    const { data, error } = await supabase.storage
+      .from("resumes")
+      .createSignedUrl(resumeUrl, 60);
+    if (error || !data?.signedUrl) {
+      toast({ title: "Could not access resume", variant: "destructive" });
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
+  };
+
   const updateStatus = async (appId: string, status: string) => {
     await supabase.from("applications").update({ status }).eq("id", appId);
     toast({ title: `Status updated to ${status}` });
