@@ -118,7 +118,10 @@ export default function OpportunityDetails() {
                 </Badge>
               )}
             </div>
-            <h1 className="text-3xl font-extrabold text-white md:text-4xl">{opp.title}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-extrabold text-white md:text-4xl">{opp.title}</h1>
+              <SaveOpportunityButton opportunityId={opp.id} className="text-white hover:text-white" />
+            </div>
             {opp.company && <p className="mt-2 text-lg text-white/80">{opp.company}</p>}
             {opp.location && (
               <p className="mt-1 flex items-center gap-1.5 text-white/70 text-sm">
