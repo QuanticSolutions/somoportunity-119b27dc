@@ -52,10 +52,10 @@ export default function Opportunities() {
   const fetchOpps = async () => {
     const { data } = await supabase
       .from("opportunities")
-      .select("*")
+      .select("*, applications(id)")
       .eq("provider_id", user!.id)
       .order("created_at", { ascending: false });
-    setOpps(data || []);
+    setOpps((data || []).map((o: any) => ({ ...o, apps_count: o.applications?.length ?? 0 })));
     setLoading(false);
   };
 
