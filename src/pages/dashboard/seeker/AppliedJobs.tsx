@@ -33,7 +33,7 @@ export default function AppliedJobs() {
     supabase
       .from("applications")
       .select("id, status, created_at, opportunity:opportunities(title, company)")
-      .eq("user_id", user.id)
+      .eq("seeker_id", user.id)
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         setApps((data as unknown as Application[]) || []);

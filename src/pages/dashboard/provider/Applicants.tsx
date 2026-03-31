@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { UserCheck, Calendar, XCircle, CheckCircle, Mail, FileText } from "lucide-react";
+import { Mail, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,7 +15,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const statusOptions = ["submitted", "shortlisted", "interview", "hired", "denied"];
+const statusOptions: Array<"submitted" | "shortlisted" | "interview" | "hired" | "denied"> = [
+  "submitted", "shortlisted", "interview", "hired", "denied",
+];
+
 const statusColor: Record<string, string> = {
   submitted: "bg-muted text-muted-foreground",
   shortlisted: "bg-amber-100 text-amber-700",
@@ -46,7 +49,7 @@ export default function Applicants() {
       .eq("provider_id", user!.id);
 
     setOpps(myOpps || []);
-    const oppIds = myOpps?.map(o => o.id) || [];
+    const oppIds = myOpps?.map((o) => o.id) || [];
 
     if (oppIds.length === 0) {
       setApplicants([]);
@@ -56,33 +59,53 @@ export default function Applicants() {
 
     const { data: apps } = await supabase
       .from("applications")
-      .select("*, profiles!applications_user_id_fkey(full_name, avatar_url, bio, country)")
+      .select("*, profiles!applications_seeker_id_fkey(full_name, avatar_url, bio, country)")
       .in("opportunity_id", oppIds)
       .order("created_at", { ascending: false });
 
-    const oppMap = new Map(myOpps?.map(o => [o.id, o.title]) || []);
+    const oppMap = new Map(myOpps?.map((o) => [o.id, o.title]) || []);
+
+    // Fetch documents for each application
+    const appIds = (apps || []).map((a) => a.id);
+    let docsMap = new Map<string, any[]>();
+    if (appIds.length > 0) {
+      const { data: docs } = await supabase
+        .from("application_documents")
+        .select("*")
+        .in("application_id", appIds);
+      (docs || []).forEach((d) => {
+        const list = docsMap.get(d.application_id) || [];
+        list.push(d);
+        docsMap.set(d.application_id, list);
+      });
+    }
+
     setApplicants(
-      (apps || []).map(a => ({ ...a, opportunity_title: oppMap.get(a.opportunity_id) || "Unknown" }))
+      (apps || []).map((a) => ({
+        ...a,
+        opportunity_title: oppMap.get(a.opportunity_id) || "Unknown",
+        documents: docsMap.get(a.id) || [],
+      }))
     );
     setLoading(false);
   };
 
-  const viewResume = async (resumeUrl: string) => {
-    if (!resumeUrl) {
-      toast({ title: "No resume uploaded", variant: "destructive" });
+  const viewDocument = async (fileUrl: string) => {
+    if (!fileUrl) {
+      toast({ title: "No document uploaded", variant: "destructive" });
       return;
     }
     const { data, error } = await supabase.storage
       .from("resumes")
-      .createSignedUrl(resumeUrl, 60);
+      .createSignedUrl(fileUrl, 60);
     if (error || !data?.signedUrl) {
-      toast({ title: "Could not access resume", variant: "destructive" });
+      toast({ title: "Could not access document", variant: "destructive" });
       return;
     }
     window.open(data.signedUrl, "_blank");
   };
 
-  const updateStatus = async (appId: string, status: string) => {
+  const updateStatus = async (appId: string, status: "submitted" | "shortlisted" | "interview" | "hired" | "denied") => {
     await supabase.from("applications").update({ status }).eq("id", appId);
     toast({ title: `Status updated to ${status}` });
     fetchData();
@@ -111,13 +134,15 @@ export default function Applicants() {
     }
   };
 
-  const filtered = filterOpp === "all" ? applicants : applicants.filter(a => a.opportunity_id === filterOpp);
+  const filtered = filterOpp === "all" ? applicants : applicants.filter((a) => a.opportunity_id === filterOpp);
 
   if (loading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-10 w-48" />
-        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-24 rounded-xl" />
+        ))}
       </div>
     );
   }
@@ -132,7 +157,9 @@ export default function Applicants() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Opportunities</SelectItem>
-            {opps.map(o => <SelectItem key={o.id} value={o.id}>{o.title}</SelectItem>)}
+            {opps.map((o) => (
+              <SelectItem key={o.id} value={o.id}>{o.title}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -150,17 +177,16 @@ export default function Applicants() {
               <Card className="glow-border">
                 <CardContent className="flex items-start gap-4 py-4">
                   <Avatar className="h-12 w-12 border border-border">
-                    <AvatarImage src={(a.profiles as any)?.avatar_url || ""} />
+                    <AvatarImage src={a.profiles?.avatar_url || ""} />
                     <AvatarFallback className="bg-accent text-accent-foreground text-sm font-bold">
-                      {((a.profiles as any)?.full_name || "?").charAt(0).toUpperCase()}
+                      {(a.profiles?.full_name || "?").charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-foreground">{(a as any).name || (a.profiles as any)?.full_name || "Unknown"}</h3>
+                    <h3 className="font-semibold text-foreground">{a.profiles?.full_name || "Unknown"}</h3>
                     <p className="text-sm text-muted-foreground">{a.opportunity_title}</p>
-                    {(a as any).email && <p className="text-xs text-muted-foreground">{(a as any).email}</p>}
                     <p className="text-xs text-muted-foreground mt-1">
-                      {(a.profiles as any)?.country} · Applied {new Date(a.created_at).toLocaleDateString()}
+                      {a.profiles?.country} · Applied {new Date(a.created_at).toLocaleDateString()}
                     </p>
                     {a.cover_letter && (
                       <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{a.cover_letter}</p>
@@ -169,31 +195,25 @@ export default function Applicants() {
                   <div className="flex flex-col items-end gap-2">
                     <Badge className={statusColor[a.status] || ""}>{a.status}</Badge>
                     <div className="flex gap-1 flex-wrap justify-end">
-                      {statusOptions.filter(s => s !== a.status).map(s => (
-                        <Button
-                          key={s}
-                          variant="outline"
-                          size="sm"
-                          className="text-xs capitalize"
-                          onClick={() => updateStatus(a.id, s)}
-                        >
+                      {statusOptions.filter((s) => s !== a.status).map((s) => (
+                        <Button key={s} variant="outline" size="sm" className="text-xs capitalize" onClick={() => updateStatus(a.id, s)}>
                           {s}
                         </Button>
                       ))}
                     </div>
-                    {(a as any).resume_url && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => viewResume((a as any).resume_url)}
-                      >
-                        <FileText size={14} className="mr-1" /> Resume
-                      </Button>
+                    {a.documents?.length > 0 && (
+                      <div className="flex gap-1 flex-wrap justify-end">
+                        {a.documents.map((doc: any) => (
+                          <Button key={doc.id} variant="outline" size="sm" onClick={() => viewDocument(doc.file_url)}>
+                            <FileText size={14} className="mr-1" /> {doc.file_type.toUpperCase()}
+                          </Button>
+                        ))}
+                      </div>
                     )}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setEmailModal({ open: true, recipientId: a.user_id, name: (a as any).name || (a.profiles as any)?.full_name || "Applicant" })}
+                      onClick={() => setEmailModal({ open: true, recipientId: a.seeker_id, name: a.profiles?.full_name || "Applicant" })}
                     >
                       <Mail size={14} className="mr-1" /> Message
                     </Button>
@@ -205,8 +225,7 @@ export default function Applicants() {
         </div>
       )}
 
-      {/* Email Modal */}
-      <Dialog open={emailModal.open} onOpenChange={(o) => setEmailModal(m => ({ ...m, open: o }))}>
+      <Dialog open={emailModal.open} onOpenChange={(o) => setEmailModal((m) => ({ ...m, open: o }))}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Message {emailModal.name}</DialogTitle>
@@ -214,11 +233,11 @@ export default function Applicants() {
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label>Subject</Label>
-              <Input value={emailForm.subject} onChange={e => setEmailForm(f => ({ ...f, subject: e.target.value }))} />
+              <Input value={emailForm.subject} onChange={(e) => setEmailForm((f) => ({ ...f, subject: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
               <Label>Message</Label>
-              <Textarea rows={5} value={emailForm.message} onChange={e => setEmailForm(f => ({ ...f, message: e.target.value }))} />
+              <Textarea rows={5} value={emailForm.message} onChange={(e) => setEmailForm((f) => ({ ...f, message: e.target.value }))} />
             </div>
             <Button onClick={sendMessage} disabled={sendingEmail} className="btn-gradient w-full rounded-lg font-semibold">
               {sendingEmail ? "Sending…" : "Send Message"}

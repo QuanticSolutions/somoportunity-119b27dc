@@ -33,7 +33,7 @@ export default function Explore() {
     if (!user) return;
     const fetchStats = async () => {
       const [appsRes, savedRes] = await Promise.all([
-        supabase.from("applications").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+        supabase.from("applications").select("id", { count: "exact", head: true }).eq("seeker_id", user.id),
         supabase.from("saved_jobs").select("id", { count: "exact", head: true }).eq("user_id", user.id),
       ]);
 
