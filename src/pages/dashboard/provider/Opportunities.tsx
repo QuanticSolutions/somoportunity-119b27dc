@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, Eye, EyeOff, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import OpportunityFormDialog from "@/components/dashboard/provider/OpportunityFormDialog";
 import WhatHappensNext from "@/components/WhatHappensNext";
+import { logActivity } from "@/lib/activity-logger";
 
 const statusStyles: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
