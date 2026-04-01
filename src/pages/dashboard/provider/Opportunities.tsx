@@ -136,6 +136,14 @@ export default function Opportunities() {
         </Card>
       )}
 
+      {subApproved && limitMessage() && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="py-4 text-sm text-destructive flex items-center gap-2">
+            <Lock size={16} /> {limitMessage()}
+          </CardContent>
+        </Card>
+      )}
+
       {activeOpps.length === 0 ? (
         <Card className="glass-card">
           <CardContent className="py-12 text-center text-muted-foreground">
