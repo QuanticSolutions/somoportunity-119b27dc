@@ -56,6 +56,7 @@ import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
 import AdminContentManagement from "./pages/admin/AdminContentManagement";
 import AdminSubmissions from "./pages/admin/AdminSubmissions";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminCreateOpportunity from "./pages/admin/AdminCreateOpportunity";
 import AdminSettings from "./pages/admin/AdminSettings";
 import ArticleDetail from "./pages/ArticleDetail";
 
