@@ -348,7 +348,7 @@ export default function AdminProviders() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="gap-2"><Eye size={14} /> View</DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2" onClick={() => navigate(`/admin/providers/${p.id}`)}><Eye size={14} /> View</DropdownMenuItem>
                             <DropdownMenuItem className="gap-2"><Pencil size={14} /> Edit</DropdownMenuItem>
                             <DropdownMenuItem className="gap-2 text-amber-600"><Ban size={14} /> Suspend</DropdownMenuItem>
                             <DropdownMenuItem className="gap-2 text-destructive"><Trash2 size={14} /> Delete</DropdownMenuItem>
