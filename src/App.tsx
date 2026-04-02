@@ -58,6 +58,7 @@ import AdminSubmissions from "./pages/admin/AdminSubmissions";
 import AdminOpportunities from "./pages/admin/AdminOpportunities";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminCreateOpportunity from "./pages/admin/AdminCreateOpportunity";
+import AdminProviderDetail from "./pages/admin/AdminProviderDetail";
 import AdminSettings from "./pages/admin/AdminSettings";
 import ArticleDetail from "./pages/ArticleDetail";
 
@@ -129,6 +130,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="users" element={<AdminRoute requiredRole="admin"><AdminUsers /></AdminRoute>} />
               <Route path="providers" element={<AdminProviders />} />
+              <Route path="providers/:id" element={<AdminProviderDetail />} />
               <Route path="subscriptions" element={<AdminSubscriptions />} />
               <Route path="content" element={<AdminContentManagement />} />
               <Route path="opportunities" element={<AdminRoute requiredRole="editor"><AdminOpportunities /></AdminRoute>} />

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -37,6 +38,7 @@ interface ProviderRow {
 const PAGE_SIZE = 8;
 
 export default function AdminProviders() {
+  const navigate = useNavigate();
   const [providers, setProviders] = useState<ProviderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -304,7 +306,7 @@ export default function AdminProviders() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem className="gap-2"><Eye size={14} /> View Provider</DropdownMenuItem>
+                                  <DropdownMenuItem className="gap-2" onClick={() => navigate(`/admin/providers/${p.id}`)}><Eye size={14} /> View Provider</DropdownMenuItem>
                                   <DropdownMenuItem className="gap-2"><Pencil size={14} /> Edit</DropdownMenuItem>
                                   <DropdownMenuItem className="gap-2 text-amber-600"><Ban size={14} /> Suspend</DropdownMenuItem>
                                   <DropdownMenuItem className="gap-2 text-destructive"><Trash2 size={14} /> Delete</DropdownMenuItem>
@@ -346,7 +348,7 @@ export default function AdminProviders() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="gap-2"><Eye size={14} /> View</DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2" onClick={() => navigate(`/admin/providers/${p.id}`)}><Eye size={14} /> View</DropdownMenuItem>
                             <DropdownMenuItem className="gap-2"><Pencil size={14} /> Edit</DropdownMenuItem>
                             <DropdownMenuItem className="gap-2 text-amber-600"><Ban size={14} /> Suspend</DropdownMenuItem>
                             <DropdownMenuItem className="gap-2 text-destructive"><Trash2 size={14} /> Delete</DropdownMenuItem>

@@ -448,17 +448,23 @@ export type Database = {
       opportunities: {
         Row: {
           allow_internal_apply: boolean
+          application_steps: Json | null
           attachments: Json | null
+          benefits: string | null
           category: string
           company: string | null
+          compensation: string | null
           created_at: string
           currency: string | null
           deadline: string | null
           description: string | null
+          eligibility: string[] | null
           external_link: string | null
+          funding_amount: string | null
           id: string
           is_verified: boolean
           location: string | null
+          official_website: string | null
           provider_id: string | null
           requirements: string | null
           status: string
@@ -473,17 +479,23 @@ export type Database = {
         }
         Insert: {
           allow_internal_apply?: boolean
+          application_steps?: Json | null
           attachments?: Json | null
+          benefits?: string | null
           category?: string
           company?: string | null
+          compensation?: string | null
           created_at?: string
           currency?: string | null
           deadline?: string | null
           description?: string | null
+          eligibility?: string[] | null
           external_link?: string | null
+          funding_amount?: string | null
           id?: string
           is_verified?: boolean
           location?: string | null
+          official_website?: string | null
           provider_id?: string | null
           requirements?: string | null
           status?: string
@@ -498,17 +510,23 @@ export type Database = {
         }
         Update: {
           allow_internal_apply?: boolean
+          application_steps?: Json | null
           attachments?: Json | null
+          benefits?: string | null
           category?: string
           company?: string | null
+          compensation?: string | null
           created_at?: string
           currency?: string | null
           deadline?: string | null
           description?: string | null
+          eligibility?: string[] | null
           external_link?: string | null
+          funding_amount?: string | null
           id?: string
           is_verified?: boolean
           location?: string | null
+          official_website?: string | null
           provider_id?: string | null
           requirements?: string | null
           status?: string
@@ -567,32 +585,50 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          city: string | null
           country: string | null
           created_at: string
           full_name: string | null
           id: string
+          linkedin: string | null
+          organization_name: string | null
+          organization_type: string | null
+          phone: string | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
+          website: string | null
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          city?: string | null
           country?: string | null
           created_at?: string
           full_name?: string | null
           id: string
+          linkedin?: string | null
+          organization_name?: string | null
+          organization_type?: string | null
+          phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
+          website?: string | null
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          city?: string | null
           country?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
+          linkedin?: string | null
+          organization_name?: string | null
+          organization_type?: string | null
+          phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }

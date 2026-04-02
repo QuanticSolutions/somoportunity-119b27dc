@@ -4,41 +4,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { logActivity } from "@/lib/activity-logger";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const categories = ["job", "internship", "scholarship", "fellowship", "grant", "competition", "volunteer"];
-const workModes = ["onsite", "remote", "hybrid"];
+import {
+  SummarySection, DescriptionSection, EligibilitySection,
+  BenefitsSection, ApplicationProcessSection, StipendTagsSection,
+  emptyFormData, type OpportunityFormData,
+} from "@/components/opportunity/OpportunityFormSections";
 
 export default function AdminCreateOpportunity() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    category: "job",
-    type: "job",
-    work_mode: "onsite",
-    location: "",
-    company: "",
-    deadline: "",
-    external_link: "",
-    requirements: "",
-    stipend_min: "",
-    stipend_max: "",
-    currency: "USD",
-    allow_internal_apply: true,
-    tags: "",
-  });
+  const [form, setForm] = useState<OpportunityFormData>(emptyFormData);
 
-  const handleChange = (key: string, value: any) => {
+  const handleChange = (key: keyof OpportunityFormData, value: any) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -54,22 +34,28 @@ export default function AdminCreateOpportunity() {
         title: form.title,
         description: form.description || null,
         category: form.category,
-        type: form.type,
+        type: form.category,
         work_mode: form.work_mode,
         location: form.location || null,
         company: form.company || null,
         deadline: form.deadline || null,
         external_link: form.external_link || null,
-        requirements: form.requirements || null,
+        official_website: form.official_website || null,
+        requirements: null,
+        eligibility: form.eligibility,
+        benefits: form.benefits || null,
+        application_steps: form.application_steps,
+        compensation: form.compensation || null,
+        funding_amount: form.funding_amount || null,
         stipend_min: form.stipend_min ? Number(form.stipend_min) : null,
         stipend_max: form.stipend_max ? Number(form.stipend_max) : null,
         currency: form.currency,
-        allow_internal_apply: form.allow_internal_apply,
-        tags: form.tags ? form.tags.split(",").map((t) => t.trim()) : [],
+        allow_internal_apply: true,
+        tags: form.tags,
         status,
         provider_id: user?.id || null,
         is_verified: true,
-      }).select().single();
+      } as any).select().single();
 
       if (error) throw error;
 
@@ -92,7 +78,7 @@ export default function AdminCreateOpportunity() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/admin/opportunities")}>
           <ArrowLeft size={20} />
@@ -103,103 +89,23 @@ export default function AdminCreateOpportunity() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Opportunity Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Title *</Label>
-              <Input value={form.title} onChange={(e) => handleChange("title", e.target.value)} placeholder="Opportunity title" />
-            </div>
-            <div className="space-y-2">
-              <Label>Company / Organization</Label>
-              <Input value={form.company} onChange={(e) => handleChange("company", e.target.value)} placeholder="Company name" />
-            </div>
-          </div>
+      <div className="space-y-6">
+        <SummarySection form={form} onChange={handleChange} isAdmin />
+        <DescriptionSection form={form} onChange={handleChange} />
+        <EligibilitySection form={form} onChange={handleChange} />
+        <BenefitsSection form={form} onChange={handleChange} />
+        <ApplicationProcessSection form={form} onChange={handleChange} />
+        <StipendTagsSection form={form} onChange={handleChange} />
+      </div>
 
-          <div className="space-y-2">
-            <Label>Description</Label>
-            <Textarea value={form.description} onChange={(e) => handleChange("description", e.target.value)} rows={5} placeholder="Full description..." />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Select value={form.category} onValueChange={(v) => handleChange("category", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => <SelectItem key={c} value={c} className="capitalize">{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Work Mode</Label>
-              <Select value={form.work_mode} onValueChange={(v) => handleChange("work_mode", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {workModes.map((m) => <SelectItem key={m} value={m} className="capitalize">{m}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Location</Label>
-              <Input value={form.location} onChange={(e) => handleChange("location", e.target.value)} placeholder="City, Country" />
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label>Stipend Min</Label>
-              <Input type="number" value={form.stipend_min} onChange={(e) => handleChange("stipend_min", e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Stipend Max</Label>
-              <Input type="number" value={form.stipend_max} onChange={(e) => handleChange("stipend_max", e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Currency</Label>
-              <Input value={form.currency} onChange={(e) => handleChange("currency", e.target.value)} />
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Deadline</Label>
-              <Input type="date" value={form.deadline} onChange={(e) => handleChange("deadline", e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>External Application Link</Label>
-              <Input value={form.external_link} onChange={(e) => handleChange("external_link", e.target.value)} placeholder="https://..." />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Requirements</Label>
-            <Textarea value={form.requirements} onChange={(e) => handleChange("requirements", e.target.value)} rows={3} placeholder="Requirements..." />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Tags (comma-separated)</Label>
-            <Input value={form.tags} onChange={(e) => handleChange("tags", e.target.value)} placeholder="react, frontend, remote" />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Switch checked={form.allow_internal_apply} onCheckedChange={(v) => handleChange("allow_internal_apply", v)} />
-            <Label>Allow internal applications</Label>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button variant="outline" onClick={() => handleSubmit("draft")} disabled={saving}>
-              Save as Draft
-            </Button>
-            <Button className="btn-gradient" onClick={() => handleSubmit("active")} disabled={saving}>
-              {saving ? "Publishing…" : "Publish Now"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex gap-3 pb-8">
+        <Button variant="outline" onClick={() => handleSubmit("draft")} disabled={saving} className="rounded-lg font-semibold">
+          Save as Draft
+        </Button>
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-semibold" onClick={() => handleSubmit("active")} disabled={saving}>
+          {saving ? "Publishing…" : "Publish Now"}
+        </Button>
+      </div>
     </div>
   );
 }
