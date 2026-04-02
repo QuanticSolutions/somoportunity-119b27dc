@@ -115,7 +115,7 @@ export default function AdminProviders() {
 
   // Stats
   const totalCount = providers.length;
-  const pendingCount = providers.filter((p) => p.subscription?.status === "pending_approval" || p.subscription?.status === "under_review").length;
+  const pendingCount = providers.filter((p) => p.subscription?.status === "pending").length;
   const activeCount = providers.filter((p) => p.subscription?.status === "active").length;
   const premiumCount = providers.filter((p) => {
     const plan = (p.subscription?.plan_display_name || "").toLowerCase();
@@ -131,7 +131,7 @@ export default function AdminProviders() {
     switch (status) {
       case "active":
         return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">Active</Badge>;
-      case "pending_approval":
+      case "pending":
       case "under_review":
         return <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100">Pending Review</Badge>;
       case "rejected":

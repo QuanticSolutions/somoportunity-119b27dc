@@ -47,7 +47,7 @@ export default function AdminOpportunities() {
 
   const statusVariant = (s: string) => {
     switch (s) {
-      case "active": return "default";
+      case "approved": return "default";
       case "pending": return "secondary";
       case "rejected": return "destructive";
       case "draft": return "outline";
@@ -108,8 +108,8 @@ export default function AdminOpportunities() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {opp.status !== "active" && (
-                          <Button size="sm" onClick={() => updateStatus(opp.id, "active")}>Approve</Button>
+                        {opp.status !== "approved" && (
+                          <Button size="sm" onClick={() => updateStatus(opp.id, "approved")}>Approve</Button>
                         )}
                         {opp.status !== "rejected" && (
                           <Button size="sm" variant="destructive" onClick={() => updateStatus(opp.id, "rejected")}>Reject</Button>
