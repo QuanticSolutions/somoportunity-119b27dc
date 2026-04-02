@@ -4,22 +4,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Upload, FileText, CheckCircle, Loader2, X } from "lucide-react";
+import { Upload, FileText, CheckCircle, Loader2, X, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { validateFile, uploadFileWithRetry } from "@/lib/upload-utils";
+import { logError } from "@/lib/error-logger";
 
 interface Props {
   opportunityId: string;
   opportunityTitle: string;
 }
-
-const ACCEPTED_TYPES = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
-const MAX_SIZE = 5 * 1024 * 1024;
 
 export default function ApplicationForm({ opportunityId, opportunityTitle }: Props) {
   const { user } = useAuth();
@@ -30,19 +25,18 @@ export default function ApplicationForm({ opportunityId, opportunityTitle }: Pro
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (!ACCEPTED_TYPES.includes(f.type)) {
-      toast({ title: "Invalid file type", description: "Please upload PDF, DOC, or DOCX.", variant: "destructive" });
-      return;
-    }
-    if (f.size > MAX_SIZE) {
-      toast({ title: "File too large", description: "Maximum file size is 5MB.", variant: "destructive" });
+    const validation = validateFile(f);
+    if (!validation.valid) {
+      toast({ title: "Invalid file", description: validation.error, variant: "destructive" });
       return;
     }
     setFiles((prev) => [...prev, f]);
+    setUploadError(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -62,6 +56,8 @@ export default function ApplicationForm({ opportunityId, opportunityTitle }: Pro
 
     setSubmitting(true);
     setUploading(true);
+    setUploadError(null);
+    setUploadProgress(0);
 
     try {
       // 1. Create application record
@@ -77,18 +73,32 @@ export default function ApplicationForm({ opportunityId, opportunityTitle }: Pro
 
       if (insertError) throw insertError;
 
-      // 2. Upload files and insert document records
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => Math.min(prev + 10, 90));
-      }, 200);
+      // 2. Upload files with retry logic
+      const totalFiles = files.length;
+      let completedFiles = 0;
 
       for (const file of files) {
         const filePath = `${user.id}/${Date.now()}-${file.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from("resumes")
-          .upload(filePath, file);
+        const result = await uploadFileWithRetry("resumes", filePath, file);
 
-        if (uploadError) throw uploadError;
+        if (!result.success) {
+          setUploadError(result.error || "Upload failed. Please try again.");
+          toast({
+            title: "Upload failed",
+            description: `Failed to upload "${file.name}". ${result.error}`,
+            variant: "destructive",
+          });
+          // Clean up: we can't easily rollback the application, but log it
+          logError(new Error(result.error), {
+            component: "ApplicationForm",
+            action: "file_upload",
+            fileName: file.name,
+            opportunityId,
+          });
+          setSubmitting(false);
+          setUploading(false);
+          return;
+        }
 
         const fileType = file.name.split(".").pop()?.toLowerCase() || "pdf";
         await supabase.from("application_documents").insert({
@@ -96,10 +106,11 @@ export default function ApplicationForm({ opportunityId, opportunityTitle }: Pro
           file_url: filePath,
           file_type: fileType,
         } as any);
+
+        completedFiles++;
+        setUploadProgress(Math.round((completedFiles / totalFiles) * 100));
       }
 
-      clearInterval(progressInterval);
-      setUploadProgress(100);
       setUploading(false);
       setSubmitted(true);
       toast({ title: "Application submitted!", description: `Your application for "${opportunityTitle}" has been received.` });
@@ -107,7 +118,10 @@ export default function ApplicationForm({ opportunityId, opportunityTitle }: Pro
       if (err.code === "23505") {
         toast({ title: "Already applied", description: "You have already applied to this opportunity.", variant: "destructive" });
       } else {
-        toast({ title: "Error submitting application", description: err.message, variant: "destructive" });
+        const msg = err.message || "Something went wrong. Please try again.";
+        setUploadError(msg);
+        toast({ title: "Error submitting application", description: msg, variant: "destructive" });
+        logError(err, { component: "ApplicationForm", action: "submit", opportunityId });
       }
     } finally {
       setSubmitting(false);
@@ -168,7 +182,7 @@ export default function ApplicationForm({ opportunityId, opportunityTitle }: Pro
                     <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
                     <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => removeFile(i)}>
+                  <Button variant="ghost" size="sm" onClick={() => removeFile(i)} disabled={submitting}>
                     <X size={14} />
                   </Button>
                 </div>
@@ -177,14 +191,23 @@ export default function ApplicationForm({ opportunityId, opportunityTitle }: Pro
           )}
 
           <div
-            onClick={() => fileRef.current?.click()}
-            className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50 hover:bg-accent/50"
+            onClick={() => !submitting && fileRef.current?.click()}
+            className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50 hover:bg-accent/50 ${submitting ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <Upload size={20} className="text-muted-foreground shrink-0" />
             <p className="text-sm text-muted-foreground">Click to upload documents</p>
           </div>
 
           {uploading && <Progress value={uploadProgress} className="h-2" />}
+
+          {uploadError && (
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3">
+              <p className="text-sm text-destructive flex-1">{uploadError}</p>
+              <Button variant="outline" size="sm" onClick={handleSubmit} className="shrink-0">
+                <RefreshCw size={14} className="mr-1" /> Retry
+              </Button>
+            </div>
+          )}
         </div>
 
         <Button
