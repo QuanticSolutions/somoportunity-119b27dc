@@ -78,10 +78,11 @@ export default function AdminProviders() {
     setLoading(true);
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("id, full_name, avatar_url, country, organization_name, organization_type, phone, bio, created_at")
+      .select("*")
       .eq("role", "provider")
       .order("created_at", { ascending: false });
 
+    console.log(profiles)  
     const ids = (profiles || []).map((p) => p.id);
 
     const [{ data: subs }, { data: opps }] = await Promise.all([
