@@ -33,7 +33,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 
 export async function updateProfile(
   userId: string,
-  updates: Partial<Pick<Profile, "full_name" | "role" | "country" | "bio" | "avatar_url">>
+  updates: Partial<Pick<Profile, "full_name" | "role" | "country" | "bio" | "avatar_url" | "email" | "phone" | "organization_name" | "organization_type" | "city" | "website" | "linkedin">>
 ) {
   const { data, error } = await supabase
     .from("profiles")
