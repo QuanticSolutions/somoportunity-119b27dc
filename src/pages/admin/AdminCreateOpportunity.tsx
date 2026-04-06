@@ -34,7 +34,6 @@ export default function AdminCreateOpportunity() {
         title: form.title,
         description: form.description || null,
         category: form.category,
-        type: form.category,
         work_mode: form.work_mode,
         location: form.location || null,
         company: form.company || null,
@@ -102,7 +101,7 @@ export default function AdminCreateOpportunity() {
         <Button variant="outline" onClick={() => handleSubmit("draft")} disabled={saving} className="rounded-lg font-semibold">
           Save as Draft
         </Button>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-semibold" onClick={() => handleSubmit("active")} disabled={saving}>
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-semibold" onClick={() => handleSubmit("approved")} disabled={saving}>
           {saving ? "Publishing…" : "Publish Now"}
         </Button>
       </div>

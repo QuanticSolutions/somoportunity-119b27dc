@@ -44,13 +44,13 @@ export default function AdminArticles() {
     setUploading(true);
     const ext = file.name.split(".").pop();
     const filePath = `articles/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("avatars").upload(filePath, file);
+    const { error } = await supabase.storage.from("articles").upload(filePath, file);
     if (error) {
       toast({ title: "Upload failed", description: error.message, variant: "destructive" });
       setUploading(false);
       return;
     }
-    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    const { data: urlData } = supabase.storage.from("articles").getPublicUrl(filePath);
     setForm((f) => ({ ...f, cover_image: urlData.publicUrl }));
     setUploading(false);
   };
