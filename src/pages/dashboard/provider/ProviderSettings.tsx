@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Upload, User, CreditCard, Phone, Check, Clock, Building2, Globe, Linkedin } from "lucide-react";
+import { Upload, User, CreditCard, Phone, Check, Clock, Globe, Linkedin } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateProfile, uploadAvatar } from "@/services/profile";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function ProviderSettings() {
   const { user, profile, refreshProfile } = useAuth();
 
-  // Profile fields
   const [fullName, setFullName] = useState("");
   const [bio, setBio] = useState("");
   const [country, setCountry] = useState("");
@@ -33,7 +32,7 @@ export default function ProviderSettings() {
 
   // Contact fields
   const [phone, setPhone] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
+  const [email, setEmail] = useState("");
   const [savingContact, setSavingContact] = useState(false);
 
   // Subscription
@@ -46,9 +45,16 @@ export default function ProviderSettings() {
       setFullName(profile.full_name || "");
       setBio(profile.bio || "");
       setCountry(profile.country || "");
+      setCity((profile as any).city || "");
+      setOrgName((profile as any).organization_name || "");
+      setOrgType((profile as any).organization_type || "company");
+      setWebsite((profile as any).website || "");
+      setLinkedin((profile as any).linkedin || "");
+      setPhone(profile.phone || "");
+      setEmail(profile.email || user?.email || "");
       if (profile.avatar_url) setAvatarPreview(profile.avatar_url);
     }
-  }, [profile]);
+  }, [profile, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -78,7 +84,17 @@ export default function ProviderSettings() {
     try {
       let avatar_url = profile?.avatar_url || undefined;
       if (avatarFile) avatar_url = await uploadAvatar(user.id, avatarFile);
-      await updateProfile(user.id, { full_name: fullName, bio, country, avatar_url });
+      await updateProfile(user.id, {
+        full_name: fullName,
+        bio,
+        country,
+        avatar_url,
+        city,
+        organization_name: orgName,
+        organization_type: orgType,
+        website,
+        linkedin,
+      });
       await refreshProfile();
       toast({ title: "Profile updated" });
     } catch (err: any) {
@@ -89,10 +105,22 @@ export default function ProviderSettings() {
   };
 
   const handleSaveContact = async () => {
+    if (!user) return;
+    if (!email.trim()) {
+      toast({ title: "Email is required", variant: "destructive" });
+      return;
+    }
+    if (!phone.trim()) {
+      toast({ title: "Phone number is required", variant: "destructive" });
+      return;
+    }
     setSavingContact(true);
     try {
-      // For now store contact in bio metadata or show success
+      await updateProfile(user.id, { email, phone });
+      await refreshProfile();
       toast({ title: "Contact info saved" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setSavingContact(false);
     }
@@ -131,7 +159,6 @@ export default function ProviderSettings() {
               <CardDescription>Update your organization and personal details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Avatar */}
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16 border-2 border-primary/30">
                   <AvatarImage src={avatarPreview} />
@@ -166,35 +193,31 @@ export default function ProviderSettings() {
                       <SelectItem value="ngo">NGO</SelectItem>
                       <SelectItem value="government">Government</SelectItem>
                       <SelectItem value="startup">Startup</SelectItem>
+                      <SelectItem value="university">University</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Email</Label>
-                  <Input value={user?.email || ""} disabled className="bg-muted/50" />
+                  <Label>Country</Label>
+                  <Input value={country} onChange={e => setCountry(e.target.value)} />
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label>Country</Label>
-                  <Input value={country} onChange={e => setCountry(e.target.value)} />
-                </div>
                 <div className="space-y-1.5">
                   <Label>City</Label>
                   <Input value={city} onChange={e => setCity(e.target.value)} placeholder="City" />
                 </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="flex items-center gap-1.5"><Globe size={14} /> Website</Label>
                   <Input value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1.5"><Linkedin size={14} /> LinkedIn</Label>
-                  <Input value={linkedin} onChange={e => setLinkedin(e.target.value)} placeholder="https://linkedin.com/company/..." />
-                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><Linkedin size={14} /> LinkedIn</Label>
+                <Input value={linkedin} onChange={e => setLinkedin(e.target.value)} placeholder="https://linkedin.com/company/..." />
               </div>
 
               <div className="space-y-1.5">
@@ -216,7 +239,6 @@ export default function ProviderSettings() {
               <Skeleton className="h-40 rounded-xl" />
             ) : sub ? (
               <>
-                {/* Current plan */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Current Plan</CardTitle>
@@ -249,7 +271,6 @@ export default function ProviderSettings() {
                   </CardContent>
                 </Card>
 
-                {/* Available plans */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Change Plan</h3>
                   <p className="text-sm text-muted-foreground mb-4">
@@ -318,23 +339,29 @@ export default function ProviderSettings() {
           <Card>
             <CardHeader>
               <CardTitle>Contact Information</CardTitle>
-              <CardDescription>Update your contact details for communication</CardDescription>
+              <CardDescription>Update your email and phone number</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label>Phone Number</Label>
-                  <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+252 XX XXX XXXX" />
+                  <Label>Email <span className="text-destructive">*</span></Label>
+                  <Input
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    type="email"
+                  />
+                  <p className="text-xs text-muted-foreground">This is your contact email displayed to applicants.</p>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>WhatsApp Number</Label>
-                  <Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+252 XX XXX XXXX" />
+                  <Label>Phone Number <span className="text-destructive">*</span></Label>
+                  <Input
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    placeholder="+252 XX XXX XXXX"
+                    type="tel"
+                  />
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Email</Label>
-                <Input value={user?.email || ""} disabled className="bg-muted/50" />
-                <p className="text-xs text-muted-foreground">Email cannot be changed from here.</p>
               </div>
               <Button onClick={handleSaveContact} disabled={savingContact} className="btn-gradient rounded-lg font-semibold">
                 {savingContact ? "Saving…" : "Save Contact Info"}

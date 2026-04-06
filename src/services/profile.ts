@@ -9,6 +9,13 @@ export interface Profile {
   role: AppRole;
   country: string | null;
   bio: string | null;
+  email: string | null;
+  phone: string | null;
+  organization_name: string | null;
+  organization_type: string | null;
+  city: string | null;
+  website: string | null;
+  linkedin: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,7 +33,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 
 export async function updateProfile(
   userId: string,
-  updates: Partial<Pick<Profile, "full_name" | "role" | "country" | "bio" | "avatar_url">>
+  updates: Partial<Pick<Profile, "full_name" | "role" | "country" | "bio" | "avatar_url" | "email" | "phone" | "organization_name" | "organization_type" | "city" | "website" | "linkedin">>
 ) {
   const { data, error } = await supabase
     .from("profiles")

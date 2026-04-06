@@ -22,7 +22,7 @@ export default function AdminCreateOpportunity() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = async (status: "active" | "draft") => {
+  const handleSubmit = async (status: "active" | "draft" | "approved") => {
     if (!form.title.trim()) {
       toast({ title: "Title is required", variant: "destructive" });
       return;

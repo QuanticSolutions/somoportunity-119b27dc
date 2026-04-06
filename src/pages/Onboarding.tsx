@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Upload, Globe, FileText } from "lucide-react";
+import { Upload, Globe, FileText, Phone, Mail, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,11 +19,23 @@ const countries = [
   "Canada", "Australia", "Germany", "France", "India", "Other",
 ];
 
+const orgTypes = [
+  { value: "company", label: "Company" },
+  { value: "ngo", label: "NGO" },
+  { value: "government", label: "Government" },
+  { value: "startup", label: "Startup" },
+  { value: "university", label: "University" },
+  { value: "other", label: "Other" },
+];
+
 export default function Onboarding() {
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
 
   const [country, setCountry] = useState(profile?.country || "");
+  const [phone, setPhone] = useState(profile?.phone || "");
+  const [email, setEmail] = useState(profile?.email || user?.email || "");
+  const [organizationType, setOrganizationType] = useState(profile?.organization_type || "");
   const [bio, setBio] = useState(profile?.bio || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState(profile?.avatar_url || "");
@@ -33,7 +45,6 @@ export default function Onboarding() {
   useEffect(() => {
     const savedRole = localStorage.getItem("signup_role") as AppRole | null;
     if (savedRole && user && profile && profile.role === "seeker" && savedRole !== "seeker") {
-      console.log("[Onboarding] Setting saved role from localStorage:", savedRole);
       updateProfile(user.id, { role: savedRole }).then(() => {
         refreshProfile();
         localStorage.removeItem("signup_role");
@@ -45,10 +56,14 @@ export default function Onboarding() {
   useEffect(() => {
     if (profile) {
       if (profile.country) setCountry(profile.country);
+      if (profile.phone) setPhone(profile.phone);
+      if (profile.email) setEmail(profile.email);
+      else if (user?.email) setEmail(user.email);
+      if (profile.organization_type) setOrganizationType(profile.organization_type);
       if (profile.bio) setBio(profile.bio);
       if (profile.avatar_url) setAvatarPreview(profile.avatar_url);
     }
-  }, [profile]);
+  }, [profile, user]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -61,7 +76,6 @@ export default function Onboarding() {
     setAvatarPreview(URL.createObjectURL(file));
   };
 
-  // Strip HTML to get plain text length for validation
   const getPlainTextLength = (html: string) => {
     const tmp = document.createElement("div");
     tmp.innerHTML = html;
@@ -71,8 +85,21 @@ export default function Onboarding() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
     if (!country) {
       toast({ title: "Country required", description: "Please select a country", variant: "destructive" });
+      return;
+    }
+    if (!phone.trim()) {
+      toast({ title: "Phone required", description: "Please enter your phone number", variant: "destructive" });
+      return;
+    }
+    if (!email.trim()) {
+      toast({ title: "Email required", description: "Please enter your email", variant: "destructive" });
+      return;
+    }
+    if (!organizationType) {
+      toast({ title: "Organization type required", description: "Please select an organization type", variant: "destructive" });
       return;
     }
     const plainLength = getPlainTextLength(bio);
@@ -88,23 +115,21 @@ export default function Onboarding() {
         avatar_url = await uploadAvatar(user.id, avatarFile);
       }
 
-      // Preserve the current role — never overwrite it here
-      await updateProfile(user.id, { country, bio, avatar_url });
-      console.log("[Onboarding] Profile updated with country/bio");
+      await updateProfile(user.id, {
+        country,
+        bio,
+        avatar_url,
+        phone,
+        email,
+        organization_type: organizationType,
+      });
 
-      // Re-fetch profile from DB to get the confirmed role
       const freshProfile = await getProfile(user.id);
-      console.log("[Onboarding] Fresh profile role:", freshProfile?.role);
-
-      // Also refresh context
       await refreshProfile();
 
       toast({ title: "Profile complete! 🎉", description: "Welcome to Somopportunity" });
 
       const confirmedRole = freshProfile?.role || "seeker";
-      console.log("[Onboarding] Redirecting based on role:", confirmedRole);
-
-      // Clean up localStorage
       localStorage.removeItem("signup_role");
 
       if (confirmedRole === "provider") {
@@ -135,7 +160,6 @@ export default function Onboarding() {
         transition={{ duration: 0.5 }}
         className="relative z-10 mx-auto w-full max-w-lg px-4 py-12"
       >
-        {/* Step indicator */}
         <div className="mb-6 flex items-center justify-center gap-2">
           <div className="h-2 w-8 rounded-full bg-primary" />
           <div className="h-2 w-8 rounded-full bg-primary" />
@@ -164,7 +188,7 @@ export default function Onboarding() {
               {/* Country */}
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1.5">
-                  <Globe size={14} className="text-muted-foreground" /> Country
+                  <Globe size={14} className="text-muted-foreground" /> Country <span className="text-destructive">*</span>
                 </Label>
                 <Select value={country} onValueChange={setCountry}>
                   <SelectTrigger>
@@ -178,10 +202,53 @@ export default function Onboarding() {
                 </Select>
               </div>
 
+              {/* Phone Number */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  <Phone size={14} className="text-muted-foreground" /> Phone Number <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+252 XX XXX XXXX"
+                  type="tel"
+                />
+              </div>
+
+              {/* Email */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  <Mail size={14} className="text-muted-foreground" /> Email <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  type="email"
+                />
+              </div>
+
+              {/* Organization Type */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  <Building2 size={14} className="text-muted-foreground" /> Organization Type <span className="text-destructive">*</span>
+                </Label>
+                <Select value={organizationType} onValueChange={setOrganizationType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select organization type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {orgTypes.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Bio — Rich Text Editor */}
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1.5">
-                  <FileText size={14} className="text-muted-foreground" /> Short bio
+                  <FileText size={14} className="text-muted-foreground" /> Short bio <span className="text-destructive">*</span>
                 </Label>
                 <RichTextEditor
                   value={bio}
