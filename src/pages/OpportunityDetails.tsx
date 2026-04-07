@@ -40,7 +40,8 @@ export default function OpportunityDetails() {
         .eq("id", id)
         .in("status", ["approved"])
         .single();
-      setOpp(data);
+      setOpp(data)
+      console.log(data);
       setLoading(false);
 
       if (data) {
