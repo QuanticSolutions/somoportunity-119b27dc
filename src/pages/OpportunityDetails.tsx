@@ -356,9 +356,6 @@ export default function OpportunityDetails() {
     </div>
   );
 }
-
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
 
       {/* Hero header */}
