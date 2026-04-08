@@ -49,13 +49,9 @@ export default function ApplicationForm({ opportunityId, opportunityTitle }: Pro
       toast({ title: "Please sign in to apply", variant: "destructive" });
       return;
     }
-    if (files.length === 0) {
-      toast({ title: "Please upload at least one document (resume)", variant: "destructive" });
-      return;
-    }
 
     setSubmitting(true);
-    setUploading(true);
+    setUploading(files.length > 0);
     setUploadError(null);
     setUploadProgress(0);
 
@@ -73,42 +69,43 @@ export default function ApplicationForm({ opportunityId, opportunityTitle }: Pro
 
       if (insertError) throw insertError;
 
-      // 2. Upload files with retry logic
-      const totalFiles = files.length;
-      let completedFiles = 0;
+      // 2. Upload files if any
+      if (files.length > 0) {
+        const totalFiles = files.length;
+        let completedFiles = 0;
 
-      for (const file of files) {
-        const filePath = `${user.id}/${Date.now()}-${file.name}`;
-        const result = await uploadFileWithRetry("resumes", filePath, file);
+        for (const file of files) {
+          const filePath = `${user.id}/${Date.now()}-${file.name}`;
+          const result = await uploadFileWithRetry("resumes", filePath, file);
 
-        if (!result.success) {
-          setUploadError(result.error || "Upload failed. Please try again.");
-          toast({
-            title: "Upload failed",
-            description: `Failed to upload "${file.name}". ${result.error}`,
-            variant: "destructive",
-          });
-          // Clean up: we can't easily rollback the application, but log it
-          logError(new Error(result.error), {
-            component: "ApplicationForm",
-            action: "file_upload",
-            fileName: file.name,
-            opportunityId,
-          });
-          setSubmitting(false);
-          setUploading(false);
-          return;
+          if (!result.success) {
+            setUploadError(result.error || "Upload failed. Please try again.");
+            toast({
+              title: "Upload failed",
+              description: `Failed to upload "${file.name}". ${result.error}`,
+              variant: "destructive",
+            });
+            logError(new Error(result.error), {
+              component: "ApplicationForm",
+              action: "file_upload",
+              fileName: file.name,
+              opportunityId,
+            });
+            setSubmitting(false);
+            setUploading(false);
+            return;
+          }
+
+          const fileType = file.name.split(".").pop()?.toLowerCase() || "pdf";
+          await supabase.from("application_documents").insert({
+            application_id: (app as any).id,
+            file_url: filePath,
+            file_type: fileType,
+          } as any);
+
+          completedFiles++;
+          setUploadProgress(Math.round((completedFiles / totalFiles) * 100));
         }
-
-        const fileType = file.name.split(".").pop()?.toLowerCase() || "pdf";
-        await supabase.from("application_documents").insert({
-          application_id: (app as any).id,
-          file_url: filePath,
-          file_type: fileType,
-        } as any);
-
-        completedFiles++;
-        setUploadProgress(Math.round((completedFiles / totalFiles) * 100));
       }
 
       setUploading(false);
@@ -160,7 +157,7 @@ export default function ApplicationForm({ opportunityId, opportunityTitle }: Pro
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-1.5">
-          <Label>Cover Letter</Label>
+          <Label>Cover Letter <span className="text-muted-foreground text-xs">(Optional)</span></Label>
           <Textarea
             rows={5}
             value={coverLetter}
@@ -170,7 +167,7 @@ export default function ApplicationForm({ opportunityId, opportunityTitle }: Pro
         </div>
 
         <div className="space-y-1.5">
-          <Label>Documents * (PDF, DOC, DOCX — max 5MB each)</Label>
+          <Label>Documents <span className="text-muted-foreground text-xs">(Optional — PDF, DOC, DOCX — max 5MB each)</span></Label>
           <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" onChange={handleFileChange} className="hidden" />
 
           {files.length > 0 && (
