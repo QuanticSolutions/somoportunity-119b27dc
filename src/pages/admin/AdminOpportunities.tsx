@@ -5,26 +5,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Pencil, Loader2 } from "lucide-react";
+import {
+  SummarySection, DescriptionSection, EligibilitySection,
+  BenefitsSection, ApplicationProcessSection, StipendTagsSection,
+  emptyFormData, type OpportunityFormData,
+} from "@/components/opportunity/OpportunityFormSections";
 
 export default function AdminOpportunities() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [opps, setOpps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const [editOpen, setEditOpen] = useState(false);
   const [editOpp, setEditOpp] = useState<any>(null);
-  const [editForm, setEditForm] = useState({ title: "", category: "", location: "", status: "", description: "", deadline: "" });
+  const [form, setForm] = useState<OpportunityFormData>(emptyFormData);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchOpps = async () => {
@@ -45,23 +46,38 @@ export default function AdminOpportunities() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
-    const adminUser = (await supabase.auth.getUser()).data.user;
     await supabase.from("admin_logs").insert({
-      admin_id: adminUser?.id, action: `Opportunity ${status}`, target_id: id, target_type: "opportunity",
+      admin_id: user?.id, action: `Opportunity ${status}`, target_id: id, target_type: "opportunity",
     });
     toast({ title: `Opportunity ${status}` });
     fetchOpps();
   };
 
+  const handleChange = (key: keyof OpportunityFormData, value: any) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
   const openEdit = (opp: any) => {
     setEditOpp(opp);
-    setEditForm({
+    setForm({
       title: opp.title || "",
+      company: opp.company || "",
       category: opp.category || "job",
-      location: opp.location || "",
-      status: opp.status || "pending",
-      description: opp.description || "",
       deadline: opp.deadline ? new Date(opp.deadline).toISOString().split("T")[0] : "",
+      funding_amount: opp.funding_amount || "",
+      compensation: opp.compensation || "",
+      location: opp.location || "",
+      official_website: opp.official_website || "",
+      work_mode: opp.work_mode || "onsite",
+      description: opp.description || "",
+      eligibility: opp.eligibility || [],
+      benefits: opp.benefits || "",
+      application_steps: opp.application_steps || [],
+      external_link: opp.external_link || "",
+      stipend_min: opp.stipend_min?.toString() || "",
+      stipend_max: opp.stipend_max?.toString() || "",
+      currency: opp.currency || "USD",
+      tags: opp.tags || [],
     });
     setEditOpen(true);
   };
@@ -70,12 +86,24 @@ export default function AdminOpportunities() {
     if (!editOpp) return;
     setSubmitting(true);
     const { error } = await supabase.from("opportunities").update({
-      title: editForm.title,
-      category: editForm.category,
-      location: editForm.location,
-      status: editForm.status,
-      description: editForm.description,
-      deadline: editForm.deadline || null,
+      title: form.title,
+      company: form.company || null,
+      category: form.category,
+      deadline: form.deadline || null,
+      funding_amount: form.funding_amount || null,
+      compensation: form.compensation || null,
+      location: form.location || null,
+      official_website: form.official_website || null,
+      work_mode: form.work_mode,
+      description: form.description || null,
+      eligibility: form.eligibility,
+      benefits: form.benefits || null,
+      application_steps: form.application_steps,
+      external_link: form.external_link || null,
+      stipend_min: form.stipend_min ? Number(form.stipend_min) : null,
+      stipend_max: form.stipend_max ? Number(form.stipend_max) : null,
+      currency: form.currency,
+      tags: form.tags,
     }).eq("id", editOpp.id);
 
     if (error) {
@@ -156,59 +184,20 @@ export default function AdminOpportunities() {
         </CardContent>
       </Card>
 
-      {/* Edit Opportunity Modal */}
+      {/* Full Edit Dialog using same form sections */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Edit Opportunity</DialogTitle>
-            <DialogDescription>Update opportunity details.</DialogDescription>
+            <DialogDescription>Update all opportunity details below.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Title</Label>
-              <Input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Category</Label>
-                <Select value={editForm.category} onValueChange={(v) => setEditForm({ ...editForm, category: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="job">Job</SelectItem>
-                    <SelectItem value="scholarship">Scholarship</SelectItem>
-                    <SelectItem value="grant">Grant</SelectItem>
-                    <SelectItem value="internship">Internship</SelectItem>
-                    <SelectItem value="fellowship">Fellowship</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Status</Label>
-                <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Location</Label>
-                <Input value={editForm.location} onChange={(e) => setEditForm({ ...editForm, location: e.target.value })} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Deadline</Label>
-                <Input type="date" value={editForm.deadline} onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Description</Label>
-              <Textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} rows={4} />
-            </div>
+          <div className="space-y-6 py-2">
+            <SummarySection form={form} onChange={handleChange} isAdmin />
+            <DescriptionSection form={form} onChange={handleChange} />
+            <EligibilitySection form={form} onChange={handleChange} />
+            <BenefitsSection form={form} onChange={handleChange} />
+            <ApplicationProcessSection form={form} onChange={handleChange} />
+            <StipendTagsSection form={form} onChange={handleChange} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
