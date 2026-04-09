@@ -8,6 +8,7 @@ import {
   Settings,
   Inbox,
   Shield,
+  Globe,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -33,6 +34,7 @@ const managementItems = [
   { title: "Opportunities", url: "/admin/opportunities", icon: Briefcase },
   { title: "Submissions", url: "/admin/submissions", icon: Inbox },
   { title: "Subscriptions", url: "/admin/subscriptions", icon: CreditCard },
+  { title: "Site Pages", url: "/admin/pages", icon: Globe },
 ];
 
 const analyticsItems = [
